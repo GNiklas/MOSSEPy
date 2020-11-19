@@ -15,18 +15,17 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
     
 def comp3Heat(M1, M2, M3, title1='template', title2='filter', title3='response'):
     '''
-    
     Compare three heat plots in common figure.
     
     Parameters
     ----------
     extent: tuple 
         boundaries of the region to be plotted
-    M1 : np.array
+    M1 : numpy array
         template
-    M2 : np.array
+    M2 : numpy array
         MOSSE filter
-    M3 : np.array
+    M3 : numpy array
         response of template to filter
     title1 : string. optional.
         name of first array. default is 'template'.

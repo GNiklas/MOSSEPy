@@ -74,12 +74,12 @@ def gauss2D(valRange, size, mu, sigma):
     ----------
     valRange : int
         value range to which the Gaussian will be scaled.
-    size : numpy array
+    size : list of ints
         x and y size of array.
-    mu : numpy array
+    mu : list of floats
         x and y center position of Gaussian.
-    sigma : numpy array
-        x and y standard deviation of Gaussian.
+    sigma : list of floats
+        x and y standard deviation of 2D Gaussian.
 
     Returns
     -------
@@ -87,19 +87,22 @@ def gauss2D(valRange, size, mu, sigma):
         2D Gaussian array.
 
     """
+    # create grid
     x = np.linspace(0, size[0]-1, size[0])
     y = np.linspace(0, size[0]-1, size[0])
     X, Y = np.meshgrid(x, y)
     
+    # exponents for 1D Gaussians
     xExponent = -(X - mu[0])**2 / (2.0 * sigma[0]**2)
     yExponent = -(Y - mu[1])**2 / (2.0 * sigma[1]**2)
     
+    # 2D Gaussian is product of two 1D Gaussians
     g = (valRange - 1) * np.exp(xExponent + yExponent)
 
     return g
 
     
-def randWarp(Iin, Isize):
+def randWarp(Iin, size, angMax = 10.0, scaleExt = [0.9, 1.1], tRel = 40):
     """
     randomly warp image
 
@@ -107,9 +110,15 @@ def randWarp(Iin, Isize):
     ----------
     Iin : numpy array
         input image.
-    Isize : numpy array
+    size : list of ints
         x and y size of image.
-
+    angMax : float. optional.
+        max rotation angle in deg. default is 10.
+    scaleExt : list. optional.
+        min and max scaling factor. default is [0.9, 1.1].
+    tRel : int. optional.
+        max relative translation. default is 40.
+        
     Returns
     -------
     Iout : numpy array
@@ -117,17 +126,16 @@ def randWarp(Iin, Isize):
 
     """
     # rotation angle
-    angMax = 10.0
     angDeg = np.random.uniform(-angMax, angMax)
     angRad = np.radians(angDeg)
     c = np.cos(angRad)
     s = np.sin(angRad)
+    
     # scaling factor
-    scaleMin = 0.9
-    scaleMax  = 1.1
-    scale = np.random.uniform(scaleMin, scaleMax)
+    scale = np.random.uniform(scaleExt[0], scaleExt[1])
+    
     # translation vector
-    tMax = [int(Isize[0]/40), int(Isize[1]/40)]
+    tMax = [int(size[0]/tRel), int(size[1]/tRel)]
     t = [np.random.uniform(-tMax[0], tMax[0]), np.random.uniform(-tMax[1], tMax[1])]
     
     # rotation and scaling matrix
@@ -139,24 +147,22 @@ def randWarp(Iin, Isize):
     R  = scale * R
 
     # rotation axis in center of image
-    p = np.array([Isize[0]/2, Isize[1]/2])
+    p = np.array([size[0]/2, size[1]/2])
     p = p.reshape(2,1)
     # get offset for transform
     o = p - np.dot(la.inv(R), p)
     o = o.flatten()
     
-    # apply random transform
-    Iin = np.flipud(Iin)
+    # apply random rotation and scaling
     Iout = nd.affine_transform(Iin, la.inv(R), o, mode='nearest')
     
     # apply random translation
     Iout = nd.affine_transform(Iout, np.eye(2), t, mode='nearest')
-    Iout = np.flipud(Iout)
             
     return Iout        
 
 
-def preProcess(Iin, Isize, eps):
+def preProcess(Iin, size, eps):
     """
     pre-process image according to MOSSE pre-processing steps
 
@@ -164,7 +170,7 @@ def preProcess(Iin, Isize, eps):
     ----------
     Iin : numpy array
         input image.
-    Isize : numpy array
+    size : list of ints
         x and y size of image.
     eps : float
         regularization parameter.
@@ -177,11 +183,13 @@ def preProcess(Iin, Isize, eps):
     """
     # log transform
     Iout = np.log(Iin + 1.)
+    
     # normalize
     Iout = (Iout - np.mean(Iout)) / (np.std(Iout) + eps)
+    
     # multiply with 2D Hanning window to reduce edge effects
-    win0 = np.hanning(Isize[0])
-    win1 = np.hanning(Isize[1])
+    win0 = np.hanning(size[0])
+    win1 = np.hanning(size[1])
     win2D = np.sqrt(np.outer(win0, win1))
     Iout = Iout * win2D
     

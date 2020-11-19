@@ -47,7 +47,6 @@ def main():
         
         if i == 1:
             # get initial object position centered on target
-            ##track.initObjPos()
             objPos = [256, 256]
             track.setObjPos(objPos)
             
@@ -58,9 +57,6 @@ def main():
             
             # get initialized templates
             f, h, g, objPos = track.getResults()
-            #f = track.getTemplate()
-            #g = track.getResponse()
-            #h = track.getFilter()
             
         else:
             # correlate old filter with new template
@@ -70,10 +66,6 @@ def main():
             
             # get results
             f, h, g, objPos = track.getResults()
-            #f = track.getTemplate()
-            #g = track.getResponse()
-            #h = track.getFilter()
-            #objPos = track.getObjPos()
             
             # update MOSSE filter and output on new object position
             track.cropTemplate()

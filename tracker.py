@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Implementation of the Minimum Output Sum of Squared Error (MOSSE) tracker
-after Bolme et al. xxx
+after 
+
+Bolme et al. 2010. Visual object tracking using adaptive correlation filters.
+Proceedings / CVPR. DOI: 10.1109/CVPR.2010.5539960
 
 Created on Thu Nov 19 10:53:58 2020
 
@@ -15,7 +18,7 @@ import routines
 class Correlation(object):
     """
     Basic correlation tracker class.
-    
+    Filter initialization and update have to be done in inherited class.
     """
     
     def __init__(self, valRange, tempSize, sigma, eps):
@@ -27,14 +30,14 @@ class Correlation(object):
         ----------
         valRange : int
             image value range.
-        tempSize : numpy array
+        tempSize : list of ints
             vertical and horizontal size of template to be cropped.
         trainSteps : int
             number of initial training steps.
         rate : float
             filter learning rate used in running average.
-        sigma : float
-            standard deviation of optimal filter response.
+        sigma : list of floats
+            standard deviations of optimal filter response.
         eps : float
             regularization parameter
 
@@ -61,13 +64,12 @@ class Correlation(object):
         None.
     
         """
-        # crop template around object position from image
         dx = int(self.tempSize[0]/2)
         dy = int(self.tempSize[1]/2)
+        
+        # crop template around object position from image        
         self.f =  self.I[self.objPos[0]-dx:self.objPos[0]+dx,
                          self.objPos[1]-dy:self.objPos[1]+dy]
-        
-        self.F = np.fft.fft2(self.f)
         
     def calOptimalResponse(self):
         """
@@ -81,9 +83,10 @@ class Correlation(object):
         """
         # optimal position of target is in center of template window
         optPos = [int(self.tempSize[0]/2), int(self.tempSize[1]/2)]
-        g = routines.gauss2D(self.valRange, self.tempSize, optPos, self.sigma)
-        self.G = np.fft.fft2(g)
         
+        # optimal response is Gaussian centered in object position
+        self.g = routines.gauss2D(self.valRange, self.tempSize, optPos, self.sigma)
+
     def calFilterResponse(self):
         """
         Calculate response of template to filter.
@@ -93,9 +96,15 @@ class Correlation(object):
         None.
 
         """
-        F = np.fft.fft2(self.f)
-        self.G = F * self.conjH
-    
+        F = np.fft.fft2(self.f)        
+        H = np.fft.fft2(self.h)
+        conjH = np.conj(H)
+        
+        # calculate correlation between template and filter
+        G = F * conjH
+        
+        self.g = np.fft.ifft2(G)
+        
     def calObjPos(self):
         """
         Calculate object position from maximum in response.
@@ -105,10 +114,8 @@ class Correlation(object):
         None.
 
         """
-        g = np.fft.ifft2(self.G)
-        
         # maximum position in g
-        gPos = np.unravel_index(np.argmax(g, axis=None), g.shape)
+        gPos = np.unravel_index(np.argmax(self.g, axis=None), self.g.shape)
         
         # maximum position in full image from position of g
         # (old object position) and size of g
@@ -136,7 +143,7 @@ class Correlation(object):
 
         Parameters
         ----------
-        objPos : numpy array
+        objPos : list of ints
             current object position.
 
         Returns
@@ -158,16 +165,12 @@ class Correlation(object):
             filter mask
         g : numpy array
             response of f to h
-        objPos : numpy array
+        objPos : list of ints
             current object position
         """
-        H = np.conj(self.conjH)
-        h = np.fft.ifft2(H)
-        g = np.fft.ifft2(self.G)
-        
-        return self.f, h, g, self.objPos
+        return self.f, self.h, self.g, self.objPos
     
-    
+            
 #%%
 class MOSSE(Correlation):
     """
@@ -183,10 +186,10 @@ class MOSSE(Correlation):
         ----------
         valRange : int
             image value range.
-        tempSize : numpy array
+        tempSize : list of ints
             vertical and horizontal size of template to be cropped.
-        sigma : float
-            standard deviation of optimal filter response.
+        sigma : list of floats
+            standard deviations of optimal filter response.
         eps : float
             regularization parameter
         trainSteps : int
@@ -218,24 +221,25 @@ class MOSSE(Correlation):
 
         """
         # template is varied with affine transformations here
-        # to get a training set. get exact filters for all of the set and
-        # use the mean of them
+        # to get a training set.
         for i in range(0, self.trainSteps):
             fi = routines.randWarp(self.f, self.tempSize)
             fi = routines.preProcess(fi, self.tempSize, self.eps)
-            
             Fi = np.fft.fft2(fi)
             conjFi = np.conj(Fi)
+            G = np.fft.fft2(self.g)
             
             if (i == 0):
-                self.A = self.G * conjFi
+                self.A = G * conjFi
                 self.B = Fi * conjFi
                 
             else:
-                self.A += self.G * conjFi
+                self.A += G * conjFi
                 self.B += Fi * conjFi + self.eps
                 
-        self.conjH = self.A / self.B
+        conjH = self.A / self.B
+        H = np.conj(conjH)
+        self.h = np.fft.ifft2(H)
         
     def updateFilter(self):
         """
@@ -247,10 +251,14 @@ class MOSSE(Correlation):
 
         """
         fi = routines.preProcess(self.f, self.tempSize, self.eps)
-        F = np.fft.fft2(fi)
-        conjF = np.conj(F)
+        Fi = np.fft.fft2(fi)
+        conjFi = np.conj(Fi)
+        G = np.fft.fft2(self.g)
         
-        self.A = (1. - self.rate) * self.A + self.rate * (self.G * conjF)
-        self.B = (1. - self.rate) * self.B + + self.rate * (F * conjF + self.eps)
+        # use running average
+        self.A = (1. - self.rate) * self.A + self.rate * (G * conjFi)
+        self.B = (1. - self.rate) * self.B + + self.rate * (Fi * conjFi + self.eps)
         
-        self.conjH =  self.A / self.B
+        conjH =  self.A / self.B
+        H = np.conj(conjH)
+        self.h = np.fft.ifft2(H)
