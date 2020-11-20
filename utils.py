@@ -9,61 +9,9 @@ Created on Thu Nov 19 11:39:05 2020
 """
 
 
-import os
 import numpy as np
 import scipy.linalg as la
 import scipy.ndimage as nd
-
-
-def genFilenames(objName, i):
-    """
-    generate names of in- and output files
-
-    Parameters
-    ----------
-    objName : string
-        name of the object in image.
-    i : int
-        iterator.
-
-    Returns
-    -------
-    imgFile : string
-        input image file name.
-    temFile : string
-        template file name.
-    resFile : string
-        response file name.
-    filFile : string
-        filter file name.
-
-    """
-    path = os.getcwd()
-    inPath = path + "/data/"
-    outPath = path + "/results/"
-    
-    if (i < 10):
-        imgFile = inPath + objName + '000' + str(i) + '_noise.png'
-        temFile = outPath + objName + '000' + str(i) + '_template.png'         
-        resFile = outPath + objName + '000' + str(i) + '_response.png'
-        filFile = outPath + objName + '000' + str(i) + '_filter.png'
-    elif (i < 100):
-        imgFile = inPath + objName + '00' + str(i) + '_noise.png'
-        temFile = outPath + objName + '00' + str(i) + '_template.png' 
-        resFile = outPath + objName + '00' + str(i) + '_response.png'
-        filFile = outPath + objName + '00' + str(i) + '_filter.png'
-    elif (i < 1000):
-        imgFile = inPath + objName + '0' + str(i) + '_noise.png'
-        temFile = outPath + objName + '0' + str(i) + '_template.png'
-        resFile = outPath + objName + '0' + str(i) + '_response.png'
-        filFile = outPath + objName + '0' + str(i) + '_filter.png'
-    else:
-        imgFile = inPath + objName + str(i) + '_noise.png'
-        temFile = outPath + objName + str(i) + '_template.png' 
-        resFile = outPath + objName + str(i) + '_response.png'
-        filFile = outPath + objName + str(i) + '_filter.png'    
-        
-    return imgFile, temFile, resFile, filFile
 
     
 def gauss2D(valRange, size, mu, sigma):
@@ -162,7 +110,7 @@ def randWarp(Iin, size, angMax = 10.0, scaleExt = [0.9, 1.1], tRel = 40):
     return Iout        
 
 
-def preProcess(Iin, size, eps):
+def preProcess(Iin, size, eps=0.1):
     """
     pre-process image according to MOSSE pre-processing steps
 
@@ -172,8 +120,8 @@ def preProcess(Iin, size, eps):
         input image.
     size : list of ints
         x and y size of image.
-    eps : float
-        regularization parameter.
+    eps : float. optional.
+        regularization parameter. default is 0.1.
 
     Returns
     -------

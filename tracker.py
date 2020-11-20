@@ -12,30 +12,44 @@ Created on Thu Nov 19 10:53:58 2020
 @author: niklas
 """
 
+
+import os
 import numpy as np
-import routines
+
+import utils
+import image as img
+import visualization as vis
+
 
 class Correlation(object):
     """
     Basic correlation tracker class.
-    Filter initialization and update have to be done in inherited class.
+    
+    Tracking routine, Filter initialization 
+    and update have to be done in inherited class.
     """
     
-    def __init__(self, valRange, tempSize, sigma, eps):
+    def __init__(self,  
+                 relInDir, 
+                 relOutDir, 
+                 valRange, 
+                 tempSize, 
+                 sigma, 
+                 eps):
         """
-        Constructor of Correlation class.
+        Constructor of correlation tracker class.
         Initalize basic tracker parameters.
 
         Parameters
         ----------
+        relInDir : string
+            relative input directory
+        relOutDir : string.
+            relative output directory
         valRange : int
             image value range.
         tempSize : list of ints
             vertical and horizontal size of template to be cropped.
-        trainSteps : int
-            number of initial training steps.
-        rate : float
-            filter learning rate used in running average.
         sigma : list of floats
             standard deviations of optimal filter response.
         eps : float
@@ -46,6 +60,11 @@ class Correlation(object):
         None.
 
         """
+        # absolute in- and output directories
+        path = os.getcwd()
+        self.inDir = path + relInDir
+        self.outDir = path + relOutDir
+        
         # range of image values
         self.valRange = valRange
         # size of the template f
@@ -85,7 +104,7 @@ class Correlation(object):
         optPos = [int(self.tempSize[0]/2), int(self.tempSize[1]/2)]
         
         # optimal response is Gaussian centered in object position
-        self.g = routines.gauss2D(self.valRange, self.tempSize, optPos, self.sigma)
+        self.g = utils.gauss2D(self.valRange, self.tempSize, optPos, self.sigma)
 
     def calFilterResponse(self):
         """
@@ -114,6 +133,10 @@ class Correlation(object):
         None.
 
         """
+        # correlate old filter with new template
+        self.cropTemplate()
+        self.calFilterResponse()
+        
         # maximum position in g
         gPos = np.unravel_index(np.argmax(self.g, axis=None), self.g.shape)
         
@@ -122,24 +145,9 @@ class Correlation(object):
         self.objPos = [gPos[0] + self.objPos[0]- int(self.tempSize[0]/2), 
                       gPos[1] + self.objPos[1]- int(self.tempSize[1]/2)]
         
-    def setImage(self, I):
+    def initObjPos(self, objPos):
         """
-        Set current image frame.
-
-        ----------
-        I : numpy array
-            current image frame.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.I = I
-        
-    def setObjPos(self, objPos):
-        """
-        Set current object position.
+        initialize object position.
 
         Parameters
         ----------
@@ -153,49 +161,190 @@ class Correlation(object):
         """
         self.objPos = objPos
 
-    def getResults(self):
+    def showResults(self):
         """
-        Get template, filter and response
-        
+        Show tracking results in console.
+
         Returns
         -------
-        f : numpy array
-            template
-        h : numpy array
-            filter mask
-        g : numpy array
-            response of f to h
-        objPos : list of ints
-            current object position
+        None.
+
         """
-        return self.f, self.h, self.g, self.objPos
-    
+        # fit images to valRange for output
+        f = (self.valRange-1)/self.f.max() * self.f
+        g = (self.valRange-1)/self.g.max() * self.g
+        h = (self.valRange-1)/self.h.max() * self.h
             
+        print('---------------------')
+        print('iteration: ', self.i)
+        print('objPos: ', self.objPos)
+        
+        # show heat plots of template, filter and response
+        # in common figure
+        vis.comp3Heat(f, abs(np.fft.ifftshift(h)), abs(g))
+        
+    def saveResults(self):
+        """
+        Save tracking results to files.
+
+        Returns
+        -------
+        None.
+
+        """
+        # fit images to valRange for output
+        f = (self.valRange-1)/self.f.max() * self.f
+        g = (self.valRange-1)/self.g.max() * self.g
+        h = (self.valRange-1)/self.h.max() * self.h
+        
+        # define output filenames
+        name = os.path.basename(self.imgFile.path)
+        temFile = self.outDir + '/' + name[:-4] + '_tem.png'
+        filFile = self.outDir + '/' + name[:-4] + '_fil.png'
+        resFile = self.outDir + '/' + name[:-4] + '_res.png'
+                
+        # save results to files
+        img.write(temFile, f)
+        img.write(filFile, abs(np.fft.ifftshift(h)))        
+        img.write(resFile, abs(g))
+
+
 #%%
-class MOSSE(Correlation):
+class AdpCorrelation(Correlation):
     """
-    MOSSE tracker class. Inherits from basic correlation
+    Class of adaptive correlation trackers. Inherits
+    from basic correlation tracker class.
+    
+    Filter initialization and update have to be done in inherited class.
+    """
+    
+    def __init__(self, 
+                 relInDir, 
+                 relOutDir, 
+                 valRange, 
+                 tempSize, 
+                 sigma, 
+                 eps,
+                 trainSteps,
+                 rate):
+        """
+        constructor of adaptive correlation tracker class
+
+        Parameters
+        ----------
+        relInDir : string
+            relative input directory
+        relOutDir : string.
+            relative output directory
+        valRange : int
+            image value range
+        tempSize : list of ints
+            vertical and horizontal size of template to be cropped
+        sigma : list of floats
+            standard deviations of optimal filter response
+        eps : float
+            regularization parameter
+        trainSteps : int
+            number of initial training steps
+        rate : float
+            filter learning rate used in running average.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        # call inherited constructor
+        Correlation.__init__(self, 
+                             relInDir, 
+                             relOutDir, 
+                             valRange, 
+                             tempSize, 
+                             sigma, 
+                             eps)
+        
+        # number of training steps
+        self.trainSteps = trainSteps
+        # learning rate
+        self.rate = rate
+        
+    def trackImg(self):
+        """
+        Track object over all images in given directory.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.i = 0
+        
+        # iterate over image files in input directory
+        for self.imgFile in os.scandir(self.inDir):
+            if self.imgFile.path.endswith('.png'):
+                self.i += 1
+                
+                self.I = img.read(self.imgFile.path)
+                
+                if self.i == 1:
+                    # this should be done somewhere else !!!
+                    self.objPos = [256, 256]
+                                
+                    self.initFilter()
+                    
+                    self.saveResults()                 
+                    self.showResults()
+                    
+                else:
+                    self.calObjPos()
+                    
+                    self.saveResults()                 
+                    self.showResults()
+
+                    self.updateFilter()
+                    
+                    
+#%%
+class MOSSE(AdpCorrelation):
+    """
+    MOSSE tracker class. Inherits from adaptive correlation
     tracker class.
     """
     
-    def __init__(self, valRange, tempSize, sigma, eps, trainSteps, rate):
+    def __init__(self, 
+                 relInDir='/data', 
+                 relOutDir='/results', 
+                 valRange=256, 
+                 tempSize=[128, 128], 
+                 sigma=[2., 2.], 
+                 eps=0.1,
+                 trainSteps=256,
+                 rate=0.125):
         """
         constructor of MOSSE tracker class
 
         Parameters
         ----------
-        valRange : int
-            image value range.
-        tempSize : list of ints
+        relInDir : string. optional.
+            relative input directory. default is '/data'.
+        relOutDir : string. optional.
+            relative output directory. default is '/results'.
+        valRange : int. optional.
+            image value range. default is 256.
+        tempSize : list of ints. optional.
             vertical and horizontal size of template to be cropped.
-        sigma : list of floats
+            default is [128, 128]
+        sigma : list of floats. optional.
             standard deviations of optimal filter response.
-        eps : float
-            regularization parameter
-        trainSteps : int
-            number of initial training steps.
-        rate : float
+            default is [2., 2.].
+        eps : float. optional.
+            regularization parameter. default is 0.1.
+        trainSteps : int. optional.
+            number of initial training steps. default is 256.
+        rate : float. optional.
             filter learning rate used in running average.
+            default is 0.125.
             
         Returns
         -------
@@ -203,12 +352,15 @@ class MOSSE(Correlation):
 
         """
         # call inherited constructor
-        Correlation.__init__(self, valRange, tempSize, sigma, eps)
-        
-        # number of training steps
-        self.trainSteps = trainSteps
-        # learning rate
-        self.rate = rate
+        AdpCorrelation.__init__(self, 
+                                relInDir, 
+                                relOutDir, 
+                                valRange, 
+                                tempSize, 
+                                sigma, 
+                                eps,
+                                trainSteps,
+                                rate)
         
     def initFilter(self):
         """
@@ -220,11 +372,16 @@ class MOSSE(Correlation):
         None.
 
         """
+        # get initial template (ground truth)
+        # and optimal response to it
+        self.cropTemplate()
+        self.calOptimalResponse()
+        
         # template is varied with affine transformations here
-        # to get a training set.
+        # to get a training set. Train filter.
         for i in range(0, self.trainSteps):
-            fi = routines.randWarp(self.f, self.tempSize)
-            fi = routines.preProcess(fi, self.tempSize, self.eps)
+            fi = utils.randWarp(self.f, self.tempSize)
+            fi = utils.preProcess(fi, self.tempSize, self.eps)
             Fi = np.fft.fft2(fi)
             conjFi = np.conj(Fi)
             G = np.fft.fft2(self.g)
@@ -250,7 +407,11 @@ class MOSSE(Correlation):
         None.
 
         """
-        fi = routines.preProcess(self.f, self.tempSize, self.eps)
+        # get template centered in new object position
+        self.cropTemplate()
+        self.calOptimalResponse()
+        
+        fi = utils.preProcess(self.f, self.tempSize, self.eps)
         Fi = np.fft.fft2(fi)
         conjFi = np.conj(Fi)
         G = np.fft.fft2(self.g)
