@@ -13,7 +13,33 @@ import numpy as np
 import scipy.linalg as la
 import scipy.ndimage as nd
 
+
+def rgb2Gray(Iin):
+    """
+    convert RGB image array to grayscale
     
+    Parameters
+    ----------
+    Iin : numpy array
+        RGB image array
+    
+    Returns
+    -------
+    Iout : numpy array
+        grayscale image array
+        
+    """
+    # is already grayscale image
+    if np.size(Iin.shape) == 2:
+        Iout = Iin
+        
+    else:
+        r, g, b = Iin[:,:,0], Iin[:,:,1], Iin[:,:,2]
+        Iout = 0.2990 * r + 0.5870 * g + 0.1140 * b
+        
+    return Iout
+
+
 def gauss2D(valRange, size, mu, sigma):
     """
     calculate 2D Gaussian on array.
@@ -102,10 +128,12 @@ def randWarp(Iin, size, angMax = 10.0, scaleExt = [0.9, 1.1], tRel = 40):
     o = o.flatten()
     
     # apply random rotation and scaling
-    Iout = nd.affine_transform(Iin, la.inv(R), o, mode='nearest')
-    
+    # prefilter is set to False, because it produces negative values
+    # order is set to 1 to avoid blurring
+    Iout = nd.affine_transform(Iin, la.inv(R), o, order=1, mode='nearest', prefilter=False)
+
     # apply random translation
-    Iout = nd.affine_transform(Iout, np.eye(2), t, mode='nearest')
+    Iout = nd.affine_transform(Iout, np.eye(2), t, mode='nearest', prefilter=False)
             
     return Iout        
 

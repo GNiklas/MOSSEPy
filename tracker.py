@@ -90,6 +90,9 @@ class Correlation(object):
         self.f =  self.I[self.objPos[0]-dx:self.objPos[0]+dx,
                          self.objPos[1]-dy:self.objPos[1]+dy]
         
+        # convert to grayscale
+        self.f = utils.rgb2Gray(self.f)
+            
     def calOptimalResponse(self):
         """
         Calculate optimal response for initializing correlation filter.
@@ -133,8 +136,9 @@ class Correlation(object):
         None.
 
         """
-        # correlate old filter with new template
+        # crop template from current image
         self.cropTemplate()
+        # correlate filter with template
         self.calFilterResponse()
         
         # maximum position in g
@@ -145,9 +149,9 @@ class Correlation(object):
         self.objPos = [gPos[0] + self.objPos[0]- int(self.tempSize[0]/2), 
                       gPos[1] + self.objPos[1]- int(self.tempSize[1]/2)]
         
-    def initObjPos(self, objPos):
+    def setObjPos(self, objPos):
         """
-        initialize object position.
+        set object position.
 
         Parameters
         ----------
@@ -175,9 +179,9 @@ class Correlation(object):
         g = (self.valRange-1)/self.g.max() * self.g
         h = (self.valRange-1)/self.h.max() * self.h
             
-        print('---------------------')
         print('iteration: ', self.i)
         print('objPos: ', self.objPos)
+        print('---------------------')
         
         # show heat plots of template, filter and response
         # in common figure
@@ -197,16 +201,15 @@ class Correlation(object):
         g = (self.valRange-1)/self.g.max() * self.g
         h = (self.valRange-1)/self.h.max() * self.h
         
-        # define output filenames
-        name = os.path.basename(self.imgFile.path)
-        temFile = self.outDir + '/' + name[:-4] + '_tem.png'
-        filFile = self.outDir + '/' + name[:-4] + '_fil.png'
-        resFile = self.outDir + '/' + name[:-4] + '_res.png'
+        # define output paths
+        temPath = self.outDir + '/' + self.imgFile[:-4] + '_tem.jpg'
+        filPath = self.outDir + '/' + self.imgFile[:-4] + '_fil.jpg'
+        resPath = self.outDir + '/' + self.imgFile[:-4] + '_res.jpg'
                 
         # save results to files
-        img.write(temFile, f)
-        img.write(filFile, abs(np.fft.ifftshift(h)))        
-        img.write(resFile, abs(g))
+        img.write(temPath, f)
+        img.write(filPath, abs(np.fft.ifftshift(h)))        
+        img.write(resPath, abs(g))
 
 
 #%%
@@ -281,27 +284,28 @@ class AdpCorrelation(Correlation):
         self.i = 0
         
         # iterate over image files in input directory
-        for self.imgFile in os.scandir(self.inDir):
-            if self.imgFile.path.endswith('.png'):
+        for self.imgFile in sorted(os.listdir(self.inDir)):
+            if self.imgFile.endswith('.jpg'):
                 self.i += 1
                 
-                self.I = img.read(self.imgFile.path)
+                imgPath = self.inDir + '/' + self.imgFile
+                self.I = img.read(imgPath)
                 
-                if self.i == 1:
-                    # this should be done somewhere else !!!
-                    self.objPos = [256, 256]
-                                
+                if self.i == 1:  
+                    # initialize filter on first object position
                     self.initFilter()
                     
                     self.saveResults()                 
                     self.showResults()
                     
                 else:
+                    # find object position in new image
                     self.calObjPos()
                     
                     self.saveResults()                 
                     self.showResults()
 
+                    # update filter on new object position
                     self.updateFilter()
                     
                     
@@ -373,8 +377,8 @@ class MOSSE(AdpCorrelation):
 
         """
         # get initial template (ground truth)
-        # and optimal response to it
         self.cropTemplate()
+        # and optimal response to it        
         self.calOptimalResponse()
         
         # template is varied with affine transformations here
@@ -409,6 +413,7 @@ class MOSSE(AdpCorrelation):
         """
         # get template centered in new object position
         self.cropTemplate()
+        # set it as new ground truth        
         self.calOptimalResponse()
         
         fi = utils.preProcess(self.f, self.tempSize, self.eps)
