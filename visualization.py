@@ -12,7 +12,7 @@ Created on Thu Nov 19 11:24:28 2020
 import matplotlib.pylab as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
     
-    
+
 def comp3Heat(M1, M2, M3, title1='template', title2='filter', title3='response'):
     '''
     Compare three heat plots in common figure.
