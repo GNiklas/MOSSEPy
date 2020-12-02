@@ -1,4 +1,4 @@
-# MOSSEPY
+# MOSSEPy
 
 Implementation of the Minimum Output Sum of Squared Error (MOSSE) tracker after Bolme et al. (2010).
 
@@ -32,27 +32,27 @@ The MOSSE tracker can be used as follows:
 
 * import the tracker module
 
-'''
+```
 import tracker
-'''
+```
 
 * construct a MOSSE object.
 
-'''
+```
 track = tracker.MOSSE()
-'''
+```
 
 * initialize the position of the object to be tracked in first frame
 
-'''
+```
 track.setObjPos(objPos)
-'''
+```
 
 * track the marked object
 
-'''
+```
 track.trackImg()
-'''
+```
 
 ### In- and Output
 
@@ -69,9 +69,9 @@ The estimated object position and plots of the three outputs are printed to cons
 An example run file is given in runall.py Here, the object position
 is set to 
 
-'''
+```
 objPos = [256, 256]
-'''
+```
 
 The default tracker parameters are used.
 
@@ -87,7 +87,7 @@ Coding style of the tracker classes was inspired by:
 
 For further reading on best practices and project set up see also:
 
-* G. Wilson, D.A. Aruliah, C. Titus Brown, N.P. Chue Hong, M. Davis, R.T. Guy, S.H.D. Haddock, K. Huff, I.M. Mitchell, M. Plumbley, B. Waugh, E.P. White and P. Wilson, Best Practices for Scientific Computing, PLoS Biol. 12(1) (2014),
+* G. Wilson, D.A. Aruliah, C. Titus Brown, N.P. Chue Hong, M. Davis, R.T. Guy, S.H.D. Haddock, K. Huff, I.M. Mitchell, M. Plumbley, B. Waugh, E.P. White and P. Wilson. Best Practices for Scientific Computing. PLoS Biol. 12(1) (2014),
 e1001745. DOI: 10.1371/journal.pbio.1001745
 * R.C. Jiménez, M. Kuzak, M. Alhamdoosh et al. Four Simple Recommendations to Encourage Best Practices in
 Research Software. F1000Research (2017), 6:876. DOI: 10.12688/f1000research.11407.1
