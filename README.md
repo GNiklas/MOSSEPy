@@ -1,6 +1,6 @@
 # MOSSEPy
 
-Implementation of the Minimum Output Sum of Squared Error (MOSSE) tracker after Bolme et al. (2010).
+Implementation of the Minimum Output Sum of Squared Error (MOSSE) tracker after Bolme et al. (2010), using Python.
 
 ## Goals
 
@@ -11,9 +11,9 @@ variants of tracker classes by inheritance (As is effectively done in case of th
 
 The focus of the presented work was put onto pure algorithm treatment. To that end, the underlying functionality was implemented using numpy arrays. For effective application of MOSSE you might be interested in OpenCV's implementation.
 
-## Prerequisites
+## Requirements
 
-Python 3.7.4 was used. The following libraries are needed:
+Python 3.9 was used. The following libraries are imported:
 
 * os
 * numpy
@@ -21,6 +21,34 @@ Python 3.7.4 was used. The following libraries are needed:
 * matplotlib
 * mpl_toolkits
 * PIL
+
+## Installation
+
+* if not done, install [numpy](https://numpy.org/install/), [scipy](https://www.scipy.org/install.html), [matplotlib](https://matplotlib.org/stable/users/installing.html), [PIL](https://pypi.org/project/Pillow/)
+
+* clone the repository to your local workspace
+
+```
+$ git clone https://github.com/GNiklas/MOSSEPy.git
+```
+
+* go to your local MOSSEPy repository
+
+```
+$ cd your/local/MOSSEPy
+```
+
+* install mossepy using setup
+
+```
+$ python setup.py install
+```
+
+* uninstall using pip
+
+```
+$ pip uninstall mossepy
+```
 
 ## Running the Tests
 
@@ -30,28 +58,28 @@ No tests have been implemented, yet.
 
 The MOSSE tracker can be used as follows:
 
-* import the tracker module
+* import the tracker class
 
 ```
-import tracker
+from mossepy.mosse_tracker import MOSSE
 ```
 
 * construct a MOSSE object
 
 ```
-track = tracker.MOSSE()
+tracker = MOSSE()
 ```
 
 * initialize the position of the object to be tracked in first frame
 
 ```
-track.setObjPos(objPos)
+tracker.setObjPos(objPos)
 ```
 
 * track the marked object
 
 ```
-track.trackImg()
+tracker.trackImg()
 ```
 
 ### In- and Output
@@ -66,8 +94,7 @@ The estimated object position and plots of the three outputs are printed to cons
 
 ### Examples
 
-An example run file is given in runall.py Here, the object position
-is set to 
+An example run file and data are given in examples/. Here, the object position is set to 
 
 ```
 objPos = [256, 256]
@@ -75,20 +102,32 @@ objPos = [256, 256]
 
 The default tracker parameters are used.
 
-## Acknowledgements
+## References
 
-The presented implementation follows the MOSSE algorithm as lined out in:
+<a id="1">[1]</a> 
+Bolme, D.S. et al. (2010).
+Visual object tracking using adaptive correlation filters.
+Conference on Computer Vision and Pattern Recognition (CVPR).
+DOI: 10.1109/CVPR.2010.5539960
 
-* D.S. Bolme et al. Visual object tracking using adaptive correlation filters. Conference on Computer Vision and Pattern Recognition (CVPR), (2010). DOI: 10.1109/CVPR.2010.5539960
+<a id="2">[2]</a>
+Clark, A. (2015).
+Pillow (PIL Fork) Documentation, readthedocs.
+Retrieved from https://buildmedia.readthedocs.org/media/pdf/pillow/latest/pillow.pdf
 
-Code structure of the tracker classes was inspired by:
+<a id="3">[3]</a>
+Harris, C.R., Millman, K.J., van der Walt, S.J. et al. (2020).
+Array programming with NumPy.
+Nature 585, 357–362.
+DOI: 0.1038/s41586-020-2649-2
 
-* S. Arabas et al. Formula translation in Blitz++, NumPy and modern Fortran: A case study of the language choice tradeoffs. Scientific Programming 22 (2014) 201–222. DOI: 10.3233/SPR-140379
+<a id="4">[4]</a>
+Hunter, J.D. (2007).
+Matplotlib: A 2D graphics environment.
+Computing in Science & Engineering 9, 90-95.
+DOI: 10.1109/MCSE.2007.55
 
-For further reading on best practices and project set up see also:
-
-* G. Wilson, D.A. Aruliah, C. Titus Brown, N.P. Chue Hong, M. Davis, R.T. Guy, S.H.D. Haddock, K. Huff, I.M. Mitchell, M. Plumbley, B. Waugh, E.P. White and P. Wilson. Best Practices for Scientific Computing. PLoS Biol. 12(1) (2014),
-e1001745. DOI: 10.1371/journal.pbio.1001745
-* R.C. Jiménez, M. Kuzak, M. Alhamdoosh et al. Four Simple Recommendations to Encourage Best Practices in
-Research Software. F1000Research (2017), 6:876. DOI: 10.12688/f1000research.11407.1
-* W.S. Noble. A Quick Guide to Organizing Computational Biology Projects. PLoS Comput Biol 5(7) (2009), e1000424. DOI: 10.1371/journal.pcbi.1000424
+<a id="5">[5]</a>
+Jones, E., Oliphant, T., Peterson, P. et al (2001).
+SciPy: Open Source Scientific Tools for Python.
+Retrieved from https://www.scipy.org
