@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='mossepy',
-    version='0.1',
+    version='1.0',
     description='implementation of MOSSE tracker using numpy arrays',
     author='Niklas Guenther',
     author_email='gnthrn@gmail.com',
