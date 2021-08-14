@@ -16,9 +16,9 @@ Created on Thu Nov 19 10:53:58 2020
 import os
 import numpy as np
 
-import utils
-import image as img
-import visualization as vis
+import mossepy.utils as utils
+import mossepy.image as img
+import mossepy.visualization as vis
 
 
 class Correlation(object):

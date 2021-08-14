@@ -6,14 +6,14 @@ Created on Fri Nov 20 09:42:39 2020
 @author: niklas
 """
 
-import tracker
+from mossepy.tracker import MOSSE
 
 # choose position of object in first frame
 # that should be done by mouse click
 objPos = [256, 256]
 
 # choose tracker type
-track = tracker.MOSSE()
+track = MOSSE()
 # initialize object position in first frame
 track.setObjPos(objPos)
 # start tracking

@@ -19,8 +19,6 @@ def comp3Heat(M1, M2, M3, title1='template', title2='filter', title3='response')
     
     Parameters
     ----------
-    extent: tuple 
-        boundaries of the region to be plotted
     M1 : numpy array
         template
     M2 : numpy array

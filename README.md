@@ -36,7 +36,7 @@ The MOSSE tracker can be used as follows:
 import tracker
 ```
 
-* construct a MOSSE object.
+* construct a MOSSE object
 
 ```
 track = tracker.MOSSE()
@@ -81,7 +81,7 @@ The presented implementation follows the MOSSE algorithm as lined out in:
 
 * D.S. Bolme et al. Visual object tracking using adaptive correlation filters. Conference on Computer Vision and Pattern Recognition (CVPR), (2010). DOI: 10.1109/CVPR.2010.5539960
 
-Coding style of the tracker classes was inspired by:
+Code structure of the tracker classes was inspired by:
 
 * S. Arabas et al. Formula translation in Blitz++, NumPy and modern Fortran: A case study of the language choice tradeoffs. Scientific Programming 22 (2014) 201–222. DOI: 10.3233/SPR-140379
 
